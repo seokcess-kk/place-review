@@ -31,11 +31,17 @@ class JobRequest(BaseModel):
         return self
 
 
+class AspectData(BaseModel):
+    aspect: str
+    sentiment: str
+
+
 class ReviewData(BaseModel):
     id: int
     text: str
     date: str
     sentiment: Optional[str] = None
+    aspects: List[AspectData] = []
     keywords: List[str] = []
     summary: Optional[str] = None
 
