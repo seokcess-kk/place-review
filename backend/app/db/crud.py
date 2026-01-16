@@ -34,12 +34,14 @@ def create_analysis(
     session: Session,
     review: Review,
     sentiment: str,
+    aspects: list,
     keywords: Iterable[str],
     summary: str,
 ) -> Analysis:
     analysis = Analysis(
         review_id=review.id,
         sentiment=sentiment,
+        aspects=aspects,
         keywords=list(keywords),
         summary=summary,
     )

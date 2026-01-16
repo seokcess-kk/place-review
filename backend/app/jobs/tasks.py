@@ -62,10 +62,15 @@ def scrape_and_analyze(
             
             try:
                 analysis_result = analyzer.analyze(item.review)
+                aspects_data = [
+                    {"aspect": asp.aspect, "sentiment": asp.sentiment.value}
+                    for asp in analysis_result.aspects
+                ]
                 create_analysis(
                     session=session,
                     review=review,
                     sentiment=analysis_result.sentiment.value,
+                    aspects=aspects_data,
                     keywords=analysis_result.keywords,
                     summary=analysis_result.summary,
                 )
@@ -76,6 +81,7 @@ def scrape_and_analyze(
                     "text": item.review,
                     "date": item.date.isoformat(),
                     "sentiment": analysis_result.sentiment.value,
+                    "aspects": aspects_data,
                     "keywords": analysis_result.keywords,
                     "summary": analysis_result.summary,
                 })
@@ -87,6 +93,7 @@ def scrape_and_analyze(
                     "text": item.review,
                     "date": item.date.isoformat(),
                     "sentiment": None,
+                    "aspects": [],
                     "keywords": [],
                     "summary": None,
                     "error": str(analyze_error),

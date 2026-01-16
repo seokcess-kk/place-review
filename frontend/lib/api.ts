@@ -1,8 +1,14 @@
+export interface AspectData {
+  aspect: string;
+  sentiment: "Positive" | "Negative" | "Neutral";
+}
+
 export interface ReviewData {
   id: number;
   text: string;
   date: string;
   sentiment: "Positive" | "Negative" | "Neutral" | null;
+  aspects: AspectData[];
   keywords: string[];
   summary: string | null;
 }

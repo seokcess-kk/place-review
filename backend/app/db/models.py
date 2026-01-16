@@ -39,6 +39,7 @@ class Analysis(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     review_id: Mapped[int] = mapped_column(ForeignKey("reviews.id"), nullable=False)
     sentiment: Mapped[str] = mapped_column(String(20), nullable=False)
+    aspects: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     keywords: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

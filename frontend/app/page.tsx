@@ -3,7 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 
-import { createJob, JobProgress, ReviewData } from "@/lib/api";
+import { createJob, JobProgress, ReviewData, AspectData } from "@/lib/api";
 import { useJobStatus } from "@/hooks/useJobStatus";
 import { useScrapeStore } from "@/store/scrapeStore";
 
@@ -160,6 +160,76 @@ function KeywordCloud({ reviews }: { reviews: ReviewData[] }) {
             {keyword} <span className="keyword-count">{count}</span>
           </span>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function AspectChart({ reviews }: { reviews: ReviewData[] }) {
+  const aspectStats: Record<string, { positive: number; negative: number; neutral: number }> = {};
+  
+  reviews.forEach(r => {
+    (r.aspects || []).forEach((asp: AspectData) => {
+      if (!aspectStats[asp.aspect]) {
+        aspectStats[asp.aspect] = { positive: 0, negative: 0, neutral: 0 };
+      }
+      if (asp.sentiment === "Positive") aspectStats[asp.aspect].positive++;
+      else if (asp.sentiment === "Negative") aspectStats[asp.aspect].negative++;
+      else aspectStats[asp.aspect].neutral++;
+    });
+  });
+
+  const sortedAspects = Object.entries(aspectStats)
+    .map(([aspect, counts]) => ({
+      aspect,
+      ...counts,
+      total: counts.positive + counts.negative + counts.neutral
+    }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 8);
+
+  if (sortedAspects.length === 0) return null;
+
+  return (
+    <div className="aspect-chart">
+      <h3>속성별 감성 분석</h3>
+      <div className="aspect-bars">
+        {sortedAspects.map(({ aspect, positive, negative, neutral, total }) => (
+          <div key={aspect} className="aspect-row">
+            <div className="aspect-label">{aspect}</div>
+            <div className="aspect-bar-container">
+              <div className="aspect-bar">
+                {positive > 0 && (
+                  <div 
+                    className="aspect-segment positive" 
+                    style={{ width: `${(positive / total) * 100}%` }}
+                    title={`긍정: ${positive}건`}
+                  />
+                )}
+                {neutral > 0 && (
+                  <div 
+                    className="aspect-segment neutral" 
+                    style={{ width: `${(neutral / total) * 100}%` }}
+                    title={`중립: ${neutral}건`}
+                  />
+                )}
+                {negative > 0 && (
+                  <div 
+                    className="aspect-segment negative" 
+                    style={{ width: `${(negative / total) * 100}%` }}
+                    title={`부정: ${negative}건`}
+                  />
+                )}
+              </div>
+              <span className="aspect-count">{total}건</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="aspect-legend">
+        <span className="legend-item"><span className="legend-dot positive"></span>긍정</span>
+        <span className="legend-item"><span className="legend-dot neutral"></span>중립</span>
+        <span className="legend-item"><span className="legend-dot negative"></span>부정</span>
       </div>
     </div>
   );
@@ -383,6 +453,7 @@ export default function HomePage() {
           <div className="analysis-grid">
             <SentimentChart reviews={job.result.reviews} />
             <KeywordCloud reviews={job.result.reviews} />
+            <AspectChart reviews={job.result.reviews} />
           </div>
 
           <ReviewTable reviews={job.result.reviews} />

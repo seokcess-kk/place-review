@@ -262,7 +262,8 @@ button:disabled {
 }
 
 .sentiment-chart,
-.keyword-cloud {
+.keyword-cloud,
+.aspect-chart {
   background: white;
   padding: 20px;
   border-radius: 12px;
@@ -271,6 +272,7 @@ button:disabled {
 
 .sentiment-chart h3,
 .keyword-cloud h3,
+.aspect-chart h3,
 .review-table-container h3 {
   margin: 0 0 16px;
   font-size: 16px;
@@ -604,4 +606,108 @@ button:disabled {
 
 .toast-close:hover {
   opacity: 1;
+}
+
+.aspect-chart {
+  grid-column: span 2;
+}
+
+.aspect-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.aspect-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.aspect-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.aspect-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.aspect-bar {
+  flex: 1;
+  height: 20px;
+  background: #f3f4f6;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+}
+
+.aspect-segment {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.aspect-segment.positive {
+  background: #22c55e;
+}
+
+.aspect-segment.neutral {
+  background: #9ca3af;
+}
+
+.aspect-segment.negative {
+  background: #ef4444;
+}
+
+.aspect-count {
+  font-size: 12px;
+  color: #6b7280;
+  min-width: 40px;
+}
+
+.aspect-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  justify-content: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.legend-dot.positive {
+  background: #22c55e;
+}
+
+.legend-dot.neutral {
+  background: #9ca3af;
+}
+
+.legend-dot.negative {
+  background: #ef4444;
+}
+
+@media (max-width: 768px) {
+  .aspect-chart {
+    grid-column: span 1;
+  }
+  
+  .aspect-row {
+    grid-template-columns: 60px 1fr;
+  }
 }
