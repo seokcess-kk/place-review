@@ -4,7 +4,7 @@ from datetime import date
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, HttpUrl, field_validator
+from pydantic import BaseModel, HttpUrl, field_validator, model_validator
 
 
 class ScrapeMode(str, Enum):
@@ -31,6 +31,14 @@ class ScrapeRequest(BaseModel):
         if value < 1:
             raise ValueError("limit_qty must be >= 1")
         return value
+
+    @model_validator(mode="after")
+    def validate_limits(self) -> "ScrapeRequest":
+        if self.mode == ScrapeMode.QTY and self.limit_qty is None:
+            raise ValueError("limit_qty is required when mode is QTY")
+        if self.mode == ScrapeMode.DATE and self.limit_date is None:
+            raise ValueError("limit_date is required when mode is DATE")
+        return self
 
 
 class ScrapeResponse(BaseModel):

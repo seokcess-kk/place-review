@@ -8,12 +8,13 @@ import { useJobStatus } from "@/hooks/useJobStatus";
 import { useScrapeStore } from "@/store/scrapeStore";
 
 export default function HomePage() {
-  const { url, mode, limitQty, setUrl, setMode, setLimitQty } = useScrapeStore();
+  const { url, mode, limitQty, limitDate, setUrl, setMode, setLimitQty, setLimitDate } =
+    useScrapeStore();
   const [jobId, setJobId] = useState<string | null>(null);
   const { data: job, error: jobError } = useJobStatus(jobId);
 
   const mutation = useMutation({
-    mutationFn: () => createJob(url, mode, limitQty),
+    mutationFn: () => createJob({ url, mode, limitQty, limitDate }),
     onSuccess: (data) => setJobId(data.job_id)
   });
 
@@ -62,6 +63,18 @@ export default function HomePage() {
             min={1}
             value={limitQty}
             onChange={(event) => setLimitQty(Number(event.target.value))}
+            disabled={mode !== "QTY"}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="limitDate">기준 날짜 (DATE 모드)</label>
+          <input
+            id="limitDate"
+            type="date"
+            value={limitDate}
+            onChange={(event) => setLimitDate(event.target.value)}
+            disabled={mode !== "DATE"}
           />
         </div>
 
@@ -80,6 +93,11 @@ export default function HomePage() {
           <p className="error">{(mutation.error as Error).message}</p>
         ) : null}
         {jobError ? <p className="error">{(jobError as Error).message}</p> : null}
+        {job?.result ? (
+          <p>
+            완료: {job.result.review_count}건 수집, {job.result.analyzed_count}건 분석
+          </p>
+        ) : null}
       </section>
     </main>
   );

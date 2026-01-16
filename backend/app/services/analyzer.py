@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from importlib.util import find_spec
 from typing import Protocol
@@ -52,9 +53,14 @@ class OpenAIAnalyzer:
         payload = response.choices[0].message
         if payload.content is None:
             raise AnalyzerDependencyError("OpenAI response missing content")
-        data = payload.parsed
-        if data is None:
-            raise AnalyzerDependencyError("OpenAI response missing parsed JSON")
+        try:
+            data = json.loads(payload.content)
+        except json.JSONDecodeError as exc:
+            raise AnalyzerDependencyError("OpenAI response is not valid JSON") from exc
+        if not isinstance(data, dict):
+            raise AnalyzerDependencyError("OpenAI response JSON must be an object")
+        if "sentiment" not in data or "keywords" not in data or "summary" not in data:
+            raise AnalyzerDependencyError("OpenAI response missing required fields")
         return AnalyzeResponse(
             sentiment=SentimentLabel(data["sentiment"]),
             keywords=list(data["keywords"]),
