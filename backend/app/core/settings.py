@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_env: str
+    app_env: str = "prod"
     database_url: str
 
     model_config = SettingsConfigDict(env_prefix="", case_sensitive=False)

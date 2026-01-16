@@ -23,9 +23,7 @@ async def value_error_handler(_, exc: ValueError):
 
 @app.on_event("startup")
 async def load_settings():
-    settings = get_settings()
-    if not settings.app_env:
-        raise ValueError("APP_ENV is required")
+    get_settings()
 
 
 app.include_router(analyze_router)

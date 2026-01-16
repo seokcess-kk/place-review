@@ -31,7 +31,6 @@ packages = [
 [userenv]
 
 [userenv.shared]
-APP_ENV = "dev"
 
 [workflows]
 runButton = "Project"
