@@ -4,7 +4,6 @@ set -e
 echo "Installing Python dependencies..."
 cd backend
 pip install -r requirements.txt
-playwright install chromium
 cd ..
 
 echo "Installing and building frontend..."
