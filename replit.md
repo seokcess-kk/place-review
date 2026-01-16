@@ -46,6 +46,14 @@ The application is configured to run via the "Start application" workflow which:
 - `APP_ENV`: Application environment (dev/prod)
 - `DATABASE_URL`: PostgreSQL connection string (auto-configured)
 
+## Recent Updates (2026-01-16)
+
+- Replaced Selenium with Playwright for web scraping (better Replit compatibility)
+- Installed system Chromium and required libraries via Nix
+- Updated CSS selectors for current Naver Place page structure
+- Added automatic navigation to review tab (`/review/visitor`)
+- Multiple fallback selectors for robust review extraction
+
 ## Architecture Notes
 
 - Frontend uses Next.js rewrites to proxy API calls to the backend

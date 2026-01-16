@@ -30,8 +30,8 @@ class Scraper(Protocol):
 
 @dataclass
 class PlaywrightScraper:
-    max_scrolls: int = 12
-    scroll_pause: float = 1.25
+    max_scrolls: int = 20
+    scroll_pause: float = 1.5
 
     def scrape(
         self,
@@ -63,29 +63,32 @@ class PlaywrightScraper:
             browser = p.chromium.launch(
                 headless=True,
                 executable_path=chromium_path,
-                args=["--no-sandbox", "--disable-dev-shm-usage"]
+                args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
             )
             context = browser.new_context(
-                user_agent="Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36"
+                user_agent="Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+                viewport={"width": 412, "height": 915}
             )
             page = context.new_page()
 
             try:
-                page.goto(str(url), wait_until="networkidle", timeout=30000)
-                page.wait_for_timeout(2000)
+                review_url = self._get_review_url(str(url))
+                page.goto(review_url, wait_until="domcontentloaded", timeout=30000)
+                page.wait_for_timeout(3000)
 
                 seen_keys: set[tuple[date, str]] = set()
                 collected: List[ReviewItem] = []
                 stable_count = 0
                 previous_count = 0
 
-                for _ in range(self.max_scrolls):
+                for scroll_idx in range(self.max_scrolls):
                     html = page.content()
                     soup = BeautifulSoup(html, "html.parser")
-                    parsed_items = self._parse_items(soup.select("li.place_apply_pui"))
+
+                    parsed_items = self._parse_items(soup)
 
                     for item in parsed_items:
-                        key = (item.date, item.review)
+                        key = (item.date, item.review[:50] if len(item.review) > 50 else item.review)
                         if key in seen_keys:
                             continue
                         seen_keys.add(key)
@@ -99,12 +102,14 @@ class PlaywrightScraper:
                     else:
                         stable_count = 0
 
-                    if stable_count >= 2:
+                    if stable_count >= 3:
                         break
 
                     previous_count = len(collected)
+
                     page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
                     time.sleep(self.scroll_pause)
+
                     self._click_more(page)
 
                 return self._filter_items(collected, mode, limit_qty, limit_date)
@@ -112,46 +117,101 @@ class PlaywrightScraper:
                 context.close()
                 browser.close()
 
-    @staticmethod
-    def _parse_items(raw_items: Iterable) -> List[ReviewItem]:
+    def _get_review_url(self, url: str) -> str:
+        if "/review" in url:
+            return url
+        url = url.rstrip("/")
+        return f"{url}/review/visitor"
+
+    def _parse_items(self, soup) -> List[ReviewItem]:
         items: List[ReviewItem] = []
-        for item in raw_items:
-            text = PlaywrightScraper._extract_review_text(item)
-            if not text:
-                continue
-            review_date = PlaywrightScraper._extract_review_date(item)
-            items.append(ReviewItem(date=review_date, review=text))
+
+        review_selectors = [
+            "li.pui__X35jYm",
+            "li.place_apply_pui",
+            "div.pui__vn15t2",
+            "li[class*='review']",
+            "div[class*='review']"
+        ]
+
+        for selector in review_selectors:
+            elements = soup.select(selector)
+            if elements:
+                for item in elements:
+                    text = self._extract_review_text(item)
+                    if text and len(text) > 5:
+                        review_date = self._extract_review_date(item)
+                        items.append(ReviewItem(date=review_date, review=text))
+                if items:
+                    break
+
+        if not items:
+            all_text_divs = soup.select("div[class*='pui'], span[class*='pui']")
+            for div in all_text_divs:
+                text = div.get_text(strip=True)
+                if text and 20 < len(text) < 1000 and not text.startswith("http"):
+                    items.append(ReviewItem(date=date.today(), review=text))
+
         return items
 
-    @staticmethod
-    def _extract_review_text(item) -> Optional[str]:
-        text_area = item.select_one("div.pui__vn15t2 a")
-        if not text_area:
-            return None
-        text = text_area.get_text(strip=True)
-        if text.endswith("더보기"):
-            text = text[:-3]
-        return text or None
+    def _extract_review_text(self, item) -> Optional[str]:
+        text_selectors = [
+            "div.pui__vn15t2 a",
+            "div.pui__vn15t2",
+            "a.pui__vn15t2",
+            "span.pui__vn15t2",
+            "div[class*='content']",
+            "p[class*='text']",
+            "span[class*='text']"
+        ]
 
-    @staticmethod
-    def _extract_review_date(item) -> date:
-        for span in item.select(".pui__gfuUIT .pui__blind"):
-            if "년" not in span.text:
-                continue
-            parsed = PlaywrightScraper._parse_korean_date(span.text)
-            if parsed:
-                return parsed
+        for selector in text_selectors:
+            text_area = item.select_one(selector)
+            if text_area:
+                text = text_area.get_text(strip=True)
+                if text:
+                    if text.endswith("더보기"):
+                        text = text[:-3]
+                    return text
+
+        direct_text = item.get_text(strip=True)
+        if direct_text and len(direct_text) > 10:
+            if direct_text.endswith("더보기"):
+                direct_text = direct_text[:-3]
+            return direct_text
+
+        return None
+
+    def _extract_review_date(self, item) -> date:
+        date_patterns = [
+            r"(\d{4})\.(\d{1,2})\.(\d{1,2})",
+            r"(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일",
+            r"(\d{1,2})일\s*전",
+            r"(\d{1,2})주\s*전",
+            r"(\d{1,2})개월\s*전"
+        ]
+
+        item_text = item.get_text()
+
+        for pattern in date_patterns[:2]:
+            match = re.search(pattern, item_text)
+            if match:
+                try:
+                    return date(int(match.group(1)), int(match.group(2)), int(match.group(3)))
+                except ValueError:
+                    continue
+
+        for span in item.select("[class*='date'], [class*='time'], .pui__gfuUIT .pui__blind"):
+            text = span.get_text()
+            for pattern in date_patterns[:2]:
+                match = re.search(pattern, text)
+                if match:
+                    try:
+                        return date(int(match.group(1)), int(match.group(2)), int(match.group(3)))
+                    except ValueError:
+                        continue
+
         return date.today()
-
-    @staticmethod
-    def _parse_korean_date(text: str) -> Optional[date]:
-        match = re.search(r"(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일", text)
-        if not match:
-            return None
-        try:
-            return date(int(match.group(1)), int(match.group(2)), int(match.group(3)))
-        except ValueError:
-            return None
 
     def _should_stop(
         self,
@@ -180,15 +240,24 @@ class PlaywrightScraper:
             return [item for item in items if item.date >= limit_date]
         return items
 
-    @staticmethod
-    def _click_more(page) -> None:
-        try:
-            more_button = page.query_selector("a.fvwqf")
-            if more_button:
-                more_button.click()
-                page.wait_for_timeout(500)
-        except Exception:
-            pass
+    def _click_more(self, page) -> None:
+        more_selectors = [
+            "a.fvwqf",
+            "a[class*='more']",
+            "button[class*='more']",
+            "a.rdX0R",
+            "div[class*='more'] a"
+        ]
+
+        for selector in more_selectors:
+            try:
+                more_button = page.query_selector(selector)
+                if more_button and more_button.is_visible():
+                    more_button.click()
+                    page.wait_for_timeout(1000)
+                    return
+            except Exception:
+                continue
 
 
 def get_scraper() -> Scraper:
