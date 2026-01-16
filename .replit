@@ -50,5 +50,5 @@ externalPort = 8000
 
 [deployment]
 deploymentTarget = "vm"
-run = ["bash", "-c", "./start-prod.sh"]
-build = ["bash", "-c", "npm --prefix frontend ci && npm --prefix frontend run build"]
+run = ["bash", "./start-prod.sh"]
+build = ["bash", "-c", "cd frontend && npm ci && npm run build"]
