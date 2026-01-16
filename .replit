@@ -5,28 +5,7 @@ integrations = ["python_openai_ai_integrations:1.0.0"]
 
 [nix]
 channel = "stable-25_05"
-packages = [
-  "alsa-lib",
-  "at-spi2-atk",
-  "chromium",
-  "cups",
-  "gitFull",
-  "gtk3",
-  "libdrm",
-  "libxkbcommon",
-  "mesa",
-  "nspr",
-  "nss",
-  "pango",
-  "playwright-driver",
-  "redis",
-  "xorg.libXcomposite",
-  "xorg.libXcursor",
-  "xorg.libXdamage",
-  "xorg.libXfixes",
-  "xorg.libXi",
-  "xorg.libXrandr",
-]
+packages = ["chromium", "nspr", "nss", "redis"]
 
 [userenv]
 
