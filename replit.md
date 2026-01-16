@@ -93,6 +93,7 @@ The application is configured to run via the "Start application" workflow which:
 | `localhost binding not accessible` | 배포 환경에서 외부 헬스체크 불가 | 백엔드를 `0.0.0.0`으로 바인딩 |
 | `npm --prefix frontend ci invalid syntax` | 일부 환경에서 `--prefix` 구문 지원 안됨 | `cd frontend && npm...` 또는 서브쉘 `(cd frontend && npm...)` 사용 |
 | `working directory context lost` | bash 명령에서 `cd` 후 컨텍스트 유실 | 서브쉘 `()` 사용: `(cd backend && uvicorn ...) &` |
+| `Deployment timed out` | 서비스 시작이 너무 느려 헬스체크 실패 | `set -e` 제거, 서비스 간 `sleep` 추가로 순차 시작 |
 
 ### 배포 시 체크리스트
 1. 백엔드가 `0.0.0.0`에 바인딩되어 있는지 확인
