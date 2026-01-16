@@ -13,10 +13,11 @@ async def create_job(payload: JobRequest) -> JobResponse:
         queue = get_queue()
         job = queue.enqueue(
             scrape_and_analyze,
-            payload.url,
+            payload.get_url(),
             payload.mode,
             payload.limit_qty,
-            payload.limit_date,
+            payload.start_date,
+            payload.end_date,
         )
     except QueueDependencyError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc

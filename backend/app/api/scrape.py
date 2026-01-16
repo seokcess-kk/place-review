@@ -15,7 +15,8 @@ async def scrape_reviews(payload: ScrapeRequest) -> ScrapeResponse:
             url=str(payload.url),
             mode=payload.mode,
             limit_qty=payload.limit_qty,
-            limit_date=payload.limit_date,
+            start_date=payload.start_date,
+            end_date=payload.end_date,
         )
     except ScraperConfigError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

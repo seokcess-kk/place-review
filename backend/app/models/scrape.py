@@ -10,6 +10,7 @@ from pydantic import BaseModel, HttpUrl, field_validator, model_validator
 class ScrapeMode(str, Enum):
     QTY = "QTY"
     DATE = "DATE"
+    DATE_RANGE = "DATE_RANGE"
 
 
 class ReviewItem(BaseModel):
@@ -21,7 +22,8 @@ class ScrapeRequest(BaseModel):
     url: HttpUrl
     mode: ScrapeMode = ScrapeMode.QTY
     limit_qty: Optional[int] = None
-    limit_date: Optional[date] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
 
     @field_validator("limit_qty")
     @classmethod
@@ -36,8 +38,13 @@ class ScrapeRequest(BaseModel):
     def validate_limits(self) -> "ScrapeRequest":
         if self.mode == ScrapeMode.QTY and self.limit_qty is None:
             raise ValueError("limit_qty is required when mode is QTY")
-        if self.mode == ScrapeMode.DATE and self.limit_date is None:
-            raise ValueError("limit_date is required when mode is DATE")
+        if self.mode == ScrapeMode.DATE and self.start_date is None:
+            raise ValueError("start_date is required when mode is DATE")
+        if self.mode == ScrapeMode.DATE_RANGE:
+            if self.start_date is None or self.end_date is None:
+                raise ValueError("start_date and end_date are required when mode is DATE_RANGE")
+            if self.start_date > self.end_date:
+                raise ValueError("start_date must be before or equal to end_date")
         return self
 
 

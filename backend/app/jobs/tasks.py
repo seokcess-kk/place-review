@@ -27,7 +27,8 @@ def scrape_and_analyze(
     url: str,
     mode: Optional[str],
     limit_qty: Optional[int],
-    limit_date: Optional[date],
+    start_date: Optional[date],
+    end_date: Optional[date] = None,
 ) -> Dict[str, Any]:
     update_job_progress(0, 1, "scraping")
     
@@ -39,7 +40,8 @@ def scrape_and_analyze(
         url=url,
         mode=scrape_mode,
         limit_qty=limit_qty,
-        limit_date=limit_date,
+        start_date=start_date,
+        end_date=end_date,
     )
     
     total_items = len(items)

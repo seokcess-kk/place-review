@@ -39,23 +39,28 @@ export interface JobResponse {
 const API_BASE_URL = "/api";
 
 interface CreateJobPayload {
-  url: string;
-  mode: "QTY" | "DATE";
+  placeId: string;
+  mode: "QTY" | "DATE" | "DATE_RANGE";
   limitQty: number;
-  limitDate: string;
+  startDate: string;
+  endDate: string;
 }
 
 export async function createJob({
-  url,
+  placeId,
   mode,
   limitQty,
-  limitDate
+  startDate,
+  endDate
 }: CreateJobPayload): Promise<JobResponse> {
-  const payload: Record<string, string | number> = { url, mode };
+  const payload: Record<string, string | number> = { place_id: placeId, mode };
   if (mode === "QTY") {
     payload.limit_qty = limitQty;
-  } else {
-    payload.limit_date = limitDate;
+  } else if (mode === "DATE") {
+    payload.start_date = startDate;
+  } else if (mode === "DATE_RANGE") {
+    payload.start_date = startDate;
+    payload.end_date = endDate;
   }
 
   const response = await fetch(`${API_BASE_URL}/jobs`, {

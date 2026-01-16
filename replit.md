@@ -48,6 +48,16 @@ The application is configured to run via the "Start application" workflow which:
 
 ## Recent Updates (2026-01-16)
 
+### Input Simplification
+- Changed from full URL input to place_id only input (e.g., `1414590796`)
+- Backend constructs full URL from place_id: `https://m.place.naver.com/place/{place_id}`
+
+### Date Range Mode
+- Added DATE_RANGE mode with start_date and end_date for collecting reviews within a specific period
+- DATE mode now uses start_date (reviews from that date onwards)
+- Proper validation: start_date must be before or equal to end_date
+
+### Previous Updates
 - Replaced Selenium with Playwright for web scraping (better Replit compatibility)
 - Installed system Chromium and required libraries via Nix
 - Updated CSS selectors for current Naver Place page structure

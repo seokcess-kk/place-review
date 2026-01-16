@@ -23,7 +23,8 @@ class Scraper(Protocol):
         url: str,
         mode: ScrapeMode,
         limit_qty: Optional[int],
-        limit_date: Optional[date],
+        start_date: Optional[date],
+        end_date: Optional[date] = None,
     ) -> List[ReviewItem]:
         ...
 
@@ -38,7 +39,8 @@ class PlaywrightScraper:
         url: str,
         mode: ScrapeMode,
         limit_qty: Optional[int],
-        limit_date: Optional[date],
+        start_date: Optional[date],
+        end_date: Optional[date] = None,
     ) -> List[ReviewItem]:
         if find_spec("playwright") is None:
             raise ScraperDependencyError(
@@ -49,8 +51,10 @@ class PlaywrightScraper:
 
         if mode == ScrapeMode.QTY and limit_qty is None:
             raise ScraperConfigError("limit_qty is required when mode is QTY")
-        if mode == ScrapeMode.DATE and limit_date is None:
-            raise ScraperConfigError("limit_date is required when mode is DATE")
+        if mode == ScrapeMode.DATE and start_date is None:
+            raise ScraperConfigError("start_date is required when mode is DATE")
+        if mode == ScrapeMode.DATE_RANGE and (start_date is None or end_date is None):
+            raise ScraperConfigError("start_date and end_date are required when mode is DATE_RANGE")
 
         from bs4 import BeautifulSoup
         from playwright.sync_api import sync_playwright
@@ -94,7 +98,7 @@ class PlaywrightScraper:
                         seen_keys.add(key)
                         collected.append(item)
 
-                    if self._should_stop(collected, mode, limit_qty, limit_date):
+                    if self._should_stop(collected, mode, limit_qty, start_date):
                         break
 
                     if len(collected) == previous_count:
@@ -112,7 +116,7 @@ class PlaywrightScraper:
 
                     self._click_more(page)
 
-                return self._filter_items(collected, mode, limit_qty, limit_date)
+                return self._filter_items(collected, mode, limit_qty, start_date, end_date)
             finally:
                 context.close()
                 browser.close()
@@ -218,13 +222,13 @@ class PlaywrightScraper:
         items: List[ReviewItem],
         mode: ScrapeMode,
         limit_qty: Optional[int],
-        limit_date: Optional[date],
+        start_date: Optional[date],
     ) -> bool:
         if mode == ScrapeMode.QTY and limit_qty is not None:
             return len(items) >= limit_qty
-        if mode == ScrapeMode.DATE and limit_date is not None:
+        if mode in (ScrapeMode.DATE, ScrapeMode.DATE_RANGE) and start_date is not None:
             oldest = min((item.date for item in items), default=date.today())
-            return oldest < limit_date
+            return oldest < start_date
         return False
 
     def _filter_items(
@@ -232,12 +236,15 @@ class PlaywrightScraper:
         items: List[ReviewItem],
         mode: ScrapeMode,
         limit_qty: Optional[int],
-        limit_date: Optional[date],
+        start_date: Optional[date],
+        end_date: Optional[date] = None,
     ) -> List[ReviewItem]:
         if mode == ScrapeMode.QTY and limit_qty is not None:
             return items[:limit_qty]
-        if mode == ScrapeMode.DATE and limit_date is not None:
-            return [item for item in items if item.date >= limit_date]
+        if mode == ScrapeMode.DATE and start_date is not None:
+            return [item for item in items if item.date >= start_date]
+        if mode == ScrapeMode.DATE_RANGE and start_date is not None and end_date is not None:
+            return [item for item in items if start_date <= item.date <= end_date]
         return items
 
     def _click_more(self, page) -> None:

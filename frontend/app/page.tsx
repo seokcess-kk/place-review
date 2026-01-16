@@ -7,6 +7,8 @@ import { createJob, JobProgress, ReviewData, AspectData } from "@/lib/api";
 import { useJobStatus } from "@/hooks/useJobStatus";
 import { useScrapeStore } from "@/store/scrapeStore";
 
+type ScrapeMode = "QTY" | "DATE" | "DATE_RANGE";
+
 function ProgressBar({ progress }: { progress: JobProgress | undefined }) {
   if (!progress) return null;
 
@@ -367,14 +369,16 @@ function ReviewTable({ reviews }: { reviews: ReviewData[] }) {
 
 export default function HomePage() {
   const {
-    url,
+    placeId,
     mode,
     limitQty,
-    limitDate,
-    setUrl,
+    startDate,
+    endDate,
+    setPlaceId,
     setMode,
     setLimitQty,
-    setLimitDate,
+    setStartDate,
+    setEndDate,
   } = useScrapeStore();
   const [jobId, setJobId] = useState<string | null>(null);
   const [toast, setToast] = useState<{
@@ -385,7 +389,7 @@ export default function HomePage() {
   const { data: job, error: jobError } = useJobStatus(jobId);
 
   const mutation = useMutation({
-    mutationFn: () => createJob({ url, mode, limitQty, limitDate }),
+    mutationFn: () => createJob({ placeId, mode, limitQty, startDate, endDate }),
     onSuccess: (data) => setJobId(data.job_id),
     onError: (error) =>
       setToast({ message: (error as Error).message, type: "error" }),
@@ -419,18 +423,18 @@ export default function HomePage() {
         }}
       >
         <div className="form-group">
-          <label htmlFor="url">네이버 플레이스 URL</label>
+          <label htmlFor="placeId">플레이스 ID</label>
           <input
-            id="url"
-            type="url"
-            value={url}
-            onChange={(event) => setUrl(event.target.value)}
-            placeholder="https://m.place.naver.com/place/..."
+            id="placeId"
+            type="text"
+            value={placeId}
+            onChange={(event) => setPlaceId(event.target.value)}
+            placeholder="1234567890"
             required
             disabled={isProcessing}
           />
           <span className="input-hint">
-            모바일 네이버 플레이스 URL을 입력하세요
+            네이버 플레이스 URL에서 숫자만 입력하세요 (예: 1414590796)
           </span>
         </div>
 
@@ -441,16 +445,17 @@ export default function HomePage() {
               id="mode"
               value={mode}
               onChange={(event) =>
-                setMode(event.target.value as "QTY" | "DATE")
+                setMode(event.target.value as ScrapeMode)
               }
               disabled={isProcessing}
             >
               <option value="QTY">최근 N개 리뷰</option>
               <option value="DATE">특정 날짜 이후</option>
+              <option value="DATE_RANGE">기간 지정</option>
             </select>
           </div>
 
-          {mode === "QTY" ? (
+          {mode === "QTY" && (
             <div className="form-group">
               <label htmlFor="limitQty">수집 개수</label>
               <input
@@ -463,17 +468,44 @@ export default function HomePage() {
                 disabled={isProcessing}
               />
             </div>
-          ) : (
+          )}
+
+          {mode === "DATE" && (
             <div className="form-group">
-              <label htmlFor="limitDate">기준 날짜</label>
+              <label htmlFor="startDate">시작 날짜</label>
               <input
-                id="limitDate"
+                id="startDate"
                 type="date"
-                value={limitDate}
-                onChange={(event) => setLimitDate(event.target.value)}
+                value={startDate}
+                onChange={(event) => setStartDate(event.target.value)}
                 disabled={isProcessing}
               />
             </div>
+          )}
+
+          {mode === "DATE_RANGE" && (
+            <>
+              <div className="form-group">
+                <label htmlFor="startDate">시작 날짜</label>
+                <input
+                  id="startDate"
+                  type="date"
+                  value={startDate}
+                  onChange={(event) => setStartDate(event.target.value)}
+                  disabled={isProcessing}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="endDate">종료 날짜</label>
+                <input
+                  id="endDate"
+                  type="date"
+                  value={endDate}
+                  onChange={(event) => setEndDate(event.target.value)}
+                  disabled={isProcessing}
+                />
+              </div>
+            </>
           )}
         </div>
 
