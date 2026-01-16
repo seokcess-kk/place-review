@@ -43,6 +43,11 @@ externalPort = 80
 localPort = 6379
 externalPort = 3000
 
+[[ports]]
+localPort = 8000
+externalPort = 8000
+exposeLocalhost = true
+
 [deployment]
 deploymentTarget = "autoscale"
 run = ["bash", "-c", "cd backend && uvicorn app.main:app --host localhost --port 8000 & cd frontend && npm start"]

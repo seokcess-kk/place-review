@@ -2,6 +2,8 @@
 
 A full-stack application for analyzing place reviews from Naver.
 
+For detailed architecture documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+
 ## Overview
 
 This project consists of:
