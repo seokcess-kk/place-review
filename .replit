@@ -1,10 +1,11 @@
 modules = ["nodejs-20", "web", "python-3.11"]
 [agent]
 expertMode = true
+integrations = ["python_openai_ai_integrations:1.0.0"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["gitFull", "playwright-driver", "redis", "nspr", "nss", "cups", "libdrm", "alsa-lib", "at-spi2-atk", "gtk3", "libxkbcommon", "pango", "mesa", "xorg.libXcomposite", "xorg.libXdamage", "xorg.libXrandr", "xorg.libXfixes", "xorg.libXcursor", "xorg.libXi", "chromium"]
+packages = ["alsa-lib", "at-spi2-atk", "chromium", "cups", "gitFull", "gtk3", "libdrm", "libxkbcommon", "mesa", "nspr", "nss", "pango", "playwright-driver", "redis", "xorg.libXcomposite", "xorg.libXcursor", "xorg.libXdamage", "xorg.libXfixes", "xorg.libXi", "xorg.libXrandr"]
 
 [userenv]
 
@@ -46,7 +47,6 @@ externalPort = 3000
 [[ports]]
 localPort = 8000
 externalPort = 8000
-exposeLocalhost = true
 
 [deployment]
 deploymentTarget = "autoscale"

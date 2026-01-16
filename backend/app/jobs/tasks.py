@@ -79,7 +79,9 @@ def scrape_and_analyze(
                     "keywords": analysis_result.keywords,
                     "summary": analysis_result.summary,
                 })
-            except Exception:
+            except Exception as analyze_error:
+                import logging
+                logging.error(f"Analysis failed for review {review.id}: {analyze_error}")
                 reviews_data.append({
                     "id": review.id,
                     "text": item.review,
@@ -87,6 +89,7 @@ def scrape_and_analyze(
                     "sentiment": None,
                     "keywords": [],
                     "summary": None,
+                    "error": str(analyze_error),
                 })
             
             update_job_progress(idx + 1, total_items, "analyzing")
