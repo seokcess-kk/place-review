@@ -1,10 +1,33 @@
+export interface ReviewData {
+  id: number;
+  text: string;
+  date: string;
+  sentiment: "Positive" | "Negative" | "Neutral" | null;
+  keywords: string[];
+  summary: string | null;
+}
+
+export interface JobResult {
+  place_id: number | null;
+  place_url: string | null;
+  review_count: number;
+  analyzed_count: number;
+  reviews: ReviewData[];
+}
+
+export interface JobProgress {
+  current: number;
+  total: number;
+  stage: string;
+  percent: number;
+}
+
 export interface JobResponse {
   job_id: string;
   status: "queued" | "started" | "finished" | "failed";
-  result?: {
-    review_count: number;
-    analyzed_count: number;
-  };
+  progress?: JobProgress;
+  result?: JobResult;
+  error?: string;
 }
 
 const API_BASE_URL = "/api";

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from datetime import date
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -31,12 +31,33 @@ class JobRequest(BaseModel):
         return self
 
 
+class ReviewData(BaseModel):
+    id: int
+    text: str
+    date: str
+    sentiment: Optional[str] = None
+    keywords: List[str] = []
+    summary: Optional[str] = None
+
+
 class JobResult(BaseModel):
+    place_id: Optional[int] = None
+    place_url: Optional[str] = None
     review_count: int
     analyzed_count: int
+    reviews: List[ReviewData] = []
+
+
+class JobProgress(BaseModel):
+    current: int = 0
+    total: int = 0
+    stage: str = "pending"
+    percent: int = 0
 
 
 class JobResponse(BaseModel):
     job_id: str
     status: JobStatus
+    progress: Optional[JobProgress] = None
     result: Optional[JobResult] = None
+    error: Optional[str] = None
