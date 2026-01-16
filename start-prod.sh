@@ -2,7 +2,7 @@
 
 mkdir -p /tmp/redis
 
-redis-server --daemonize yes --dir /tmp/redis &
+redis-server --daemonize yes --dir /tmp/redis
 
 (cd backend && rq worker) &
 
