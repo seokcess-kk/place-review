@@ -1,0 +1,14 @@
+fastapi
+pydantic-settings
+uvicorn
+pytest
+httpx
+selenium
+webdriver-manager
+beautifulsoup4
+openai
+rq
+redis
+sqlalchemy
+alembic
+psycopg
