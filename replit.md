@@ -33,9 +33,11 @@ frontend/
 ## Running the Application
 
 The application is configured to run via the "Start application" workflow which:
-1. Starts the FastAPI backend on localhost:8000
-2. Starts the Next.js frontend on 0.0.0.0:5000
-3. Frontend proxies /api/* requests to the backend
+1. Starts Redis server for job queue management
+2. Starts RQ worker for background job processing
+3. Starts the FastAPI backend on localhost:8000
+4. Starts the Next.js frontend on 0.0.0.0:5000
+5. Frontend proxies /api/* requests to the backend
 
 ## Environment Variables
 
