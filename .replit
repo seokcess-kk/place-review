@@ -49,6 +49,6 @@ localPort = 8000
 externalPort = 8000
 
 [deployment]
-deploymentTarget = "autoscale"
-run = ["bash", "-c", "cd backend && uvicorn app.main:app --host localhost --port 8000 & cd frontend && npm start"]
+deploymentTarget = "vm"
+run = ["bash", "-c", "mkdir -p /tmp/redis && redis-server --daemonize yes --dir /tmp/redis && cd backend && rq worker & cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000 & cd frontend && npm run start & wait"]
 build = ["bash", "-c", "cd frontend && npm run build"]
