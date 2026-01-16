@@ -29,7 +29,7 @@ class Scraper(Protocol):
 
 
 @dataclass
-class SeleniumScraper:
+class PlaywrightScraper:
     max_scrolls: int = 12
     scroll_pause: float = 1.25
 
@@ -40,9 +40,9 @@ class SeleniumScraper:
         limit_qty: Optional[int],
         limit_date: Optional[date],
     ) -> List[ReviewItem]:
-        if find_spec("selenium") is None or find_spec("webdriver_manager") is None:
+        if find_spec("playwright") is None:
             raise ScraperDependencyError(
-                "Selenium dependencies are missing; install selenium and webdriver-manager"
+                "Playwright is missing; install playwright and run playwright install chromium"
             )
         if find_spec("bs4") is None:
             raise ScraperDependencyError("BeautifulSoup is missing; install beautifulsoup4")
@@ -53,60 +53,73 @@ class SeleniumScraper:
             raise ScraperConfigError("limit_date is required when mode is DATE")
 
         from bs4 import BeautifulSoup
-        from selenium import webdriver
-        from selenium.webdriver.chrome.service import Service
-        from webdriver_manager.chrome import ChromeDriverManager
+        from playwright.sync_api import sync_playwright
         import time
+        import shutil
 
-        options = webdriver.ChromeOptions()
-        options.add_argument("--headless=new")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-gpu")
+        chromium_path = shutil.which("chromium")
 
-        driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
-            options=options,
-        )
-        try:
-            driver.get(str(url))
-            seen_keys: set[tuple[date, str]] = set()
-            collected: List[ReviewItem] = []
-            stable_count = 0
-            previous_count = 0
-            for _ in range(self.max_scrolls):
-                html = driver.page_source
-                soup = BeautifulSoup(html, "html.parser")
-                parsed_items = self._parse_items(soup.select("li.place_apply_pui"))
-                for item in parsed_items:
-                    key = (item.date, item.review)
-                    if key in seen_keys:
-                        continue
-                    seen_keys.add(key)
-                    collected.append(item)
-                if self._should_stop(collected, mode, limit_qty, limit_date):
-                    break
-                if len(collected) == previous_count:
-                    stable_count += 1
-                else:
-                    stable_count = 0
-                if stable_count >= 2:
-                    break
-                previous_count = len(collected)
-                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(self.scroll_pause)
-                self._click_more(driver)
-            return self._filter_items(collected, mode, limit_qty, limit_date)
-        finally:
-            driver.quit()
+        with sync_playwright() as p:
+            browser = p.chromium.launch(
+                headless=True,
+                executable_path=chromium_path,
+                args=["--no-sandbox", "--disable-dev-shm-usage"]
+            )
+            context = browser.new_context(
+                user_agent="Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36"
+            )
+            page = context.new_page()
+
+            try:
+                page.goto(str(url), wait_until="networkidle", timeout=30000)
+                page.wait_for_timeout(2000)
+
+                seen_keys: set[tuple[date, str]] = set()
+                collected: List[ReviewItem] = []
+                stable_count = 0
+                previous_count = 0
+
+                for _ in range(self.max_scrolls):
+                    html = page.content()
+                    soup = BeautifulSoup(html, "html.parser")
+                    parsed_items = self._parse_items(soup.select("li.place_apply_pui"))
+
+                    for item in parsed_items:
+                        key = (item.date, item.review)
+                        if key in seen_keys:
+                            continue
+                        seen_keys.add(key)
+                        collected.append(item)
+
+                    if self._should_stop(collected, mode, limit_qty, limit_date):
+                        break
+
+                    if len(collected) == previous_count:
+                        stable_count += 1
+                    else:
+                        stable_count = 0
+
+                    if stable_count >= 2:
+                        break
+
+                    previous_count = len(collected)
+                    page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                    time.sleep(self.scroll_pause)
+                    self._click_more(page)
+
+                return self._filter_items(collected, mode, limit_qty, limit_date)
+            finally:
+                context.close()
+                browser.close()
 
     @staticmethod
     def _parse_items(raw_items: Iterable) -> List[ReviewItem]:
         items: List[ReviewItem] = []
         for item in raw_items:
-            text = SeleniumScraper._extract_review_text(item)
+            text = PlaywrightScraper._extract_review_text(item)
             if not text:
                 continue
-            review_date = SeleniumScraper._extract_review_date(item)
+            review_date = PlaywrightScraper._extract_review_date(item)
             items.append(ReviewItem(date=review_date, review=text))
         return items
 
@@ -125,14 +138,14 @@ class SeleniumScraper:
         for span in item.select(".pui__gfuUIT .pui__blind"):
             if "년" not in span.text:
                 continue
-            parsed = SeleniumScraper._parse_korean_date(span.text)
+            parsed = PlaywrightScraper._parse_korean_date(span.text)
             if parsed:
                 return parsed
         return date.today()
 
     @staticmethod
     def _parse_korean_date(text: str) -> Optional[date]:
-        match = re.search(r"(\\d{4})년\\s*(\\d{1,2})월\\s*(\\d{1,2})일", text)
+        match = re.search(r"(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일", text)
         if not match:
             return None
         try:
@@ -168,13 +181,15 @@ class SeleniumScraper:
         return items
 
     @staticmethod
-    def _click_more(driver) -> None:
+    def _click_more(page) -> None:
         try:
-            button = driver.find_element("css selector", "a.fvwqf")
-            button.click()
+            more_button = page.query_selector("a.fvwqf")
+            if more_button:
+                more_button.click()
+                page.wait_for_timeout(500)
         except Exception:
-            return
+            pass
 
 
 def get_scraper() -> Scraper:
-    return SeleniumScraper()
+    return PlaywrightScraper()

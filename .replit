@@ -4,7 +4,7 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
-packages = ["redis"]
+packages = ["gitFull", "playwright-driver", "redis", "nspr", "nss", "cups", "libdrm", "alsa-lib", "at-spi2-atk", "gtk3", "libxkbcommon", "pango", "mesa", "xorg.libXcomposite", "xorg.libXdamage", "xorg.libXrandr", "xorg.libXfixes", "xorg.libXcursor", "xorg.libXi", "chromium"]
 
 [userenv]
 
@@ -46,6 +46,7 @@ externalPort = 3000
 [[ports]]
 localPort = 8000
 externalPort = 8000
+exposeLocalhost = true
 
 [deployment]
 deploymentTarget = "autoscale"
