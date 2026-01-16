@@ -16,7 +16,7 @@ This project consists of:
 ```
 backend/
   app/
-    api/        - API routes (analyze, health, jobs, scrape)
+    api/        - API routes (health, jobs)
     core/       - Core settings
     db/         - Database models and session
     jobs/       - Background job handling
@@ -95,10 +95,20 @@ The application is configured to run via the "Start application" workflow which:
 | `working directory context lost` | bash 명령에서 `cd` 후 컨텍스트 유실 | 서브쉘 `()` 사용: `(cd backend && uvicorn ...) &` |
 | `Deployment timed out` | 서비스 시작이 너무 느려 헬스체크 실패 | `sleep` 제거, 프론트엔드를 `exec`로 메인 프로세스로 실행 |
 | `APP_ENV missing` | 배포 환경에서 환경변수 미설정으로 백엔드 시작 실패 | Settings에 기본값 설정 (`app_env: str = "prod"`) 및 production 환경변수 설정 |
+| `Nix layers uncached timeout` | Nix 패키지가 너무 커서 Bundle 단계에서 타임아웃 | 불필요한 Nix 패키지 제거, 최소한의 패키지만 유지 |
+| `playwright install chromium timeout` | build.sh에서 Chromium 다운로드로 빌드 타임아웃 | 시스템 Chromium 사용, `playwright install chromium` 제거 |
+
+### Nix 패키지 최적화 원칙
+- **필수 패키지만 설치**: 불필요한 패키지는 Bundle 크기를 증가시켜 배포 타임아웃 유발
+- **현재 필수 패키지**: `chromium`, `nspr`, `nss`, `redis`
+- **제거된 패키지**: `playwright-driver`, `gtk3`, `mesa`, `alsa-lib`, `cups`, `gitFull`, `pango`, X11 라이브러리들
+- Chromium 의존성 라이브러리는 Nix가 자동으로 관리하므로 별도 설치 불필요
 
 ### 배포 시 체크리스트
 1. 백엔드가 `0.0.0.0`에 바인딩되어 있는지 확인
 2. 빌드 스크립트에서 Python 의존성 설치 포함 여부 확인
-3. Playwright 브라우저 설치 (`playwright install chromium`) 포함 여부 확인
+3. `playwright install chromium` 제거 확인 (시스템 Chromium 사용)
 4. 프론트엔드가 프로덕션 모드(`npm run start`)로 실행되는지 확인
 5. Redis 서버 시작이 실행 스크립트에 포함되어 있는지 확인
+6. Nix 패키지가 최소화되어 있는지 확인 (Bundle 타임아웃 방지)
+7. `.replit`에 단일 외부 포트(5000→80)만 설정되어 있는지 확인
