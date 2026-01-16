@@ -15,7 +15,14 @@ class SettingsSnapshot(BaseModel):
     database_url: str
 
 
+def convert_database_url(url: str) -> str:
+    if url.startswith("postgresql://") and "+psycopg" not in url:
+        return url.replace("postgresql://", "postgresql+psycopg://")
+    return url
+
+
 @lru_cache
 def get_settings() -> SettingsSnapshot:
     settings = Settings()
-    return SettingsSnapshot(app_env=settings.app_env, database_url=settings.database_url)
+    db_url = convert_database_url(settings.database_url)
+    return SettingsSnapshot(app_env=settings.app_env, database_url=db_url)
