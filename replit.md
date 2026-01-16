@@ -94,6 +94,7 @@ The application is configured to run via the "Start application" workflow which:
 | `npm --prefix frontend ci invalid syntax` | 일부 환경에서 `--prefix` 구문 지원 안됨 | `cd frontend && npm...` 또는 서브쉘 `(cd frontend && npm...)` 사용 |
 | `working directory context lost` | bash 명령에서 `cd` 후 컨텍스트 유실 | 서브쉘 `()` 사용: `(cd backend && uvicorn ...) &` |
 | `Deployment timed out` | 서비스 시작이 너무 느려 헬스체크 실패 | `sleep` 제거, 프론트엔드를 `exec`로 메인 프로세스로 실행 |
+| `APP_ENV missing` | 배포 환경에서 환경변수 미설정으로 백엔드 시작 실패 | Settings에 기본값 설정 (`app_env: str = "prod"`) 및 production 환경변수 설정 |
 
 ### 배포 시 체크리스트
 1. 백엔드가 `0.0.0.0`에 바인딩되어 있는지 확인
