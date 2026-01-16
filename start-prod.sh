@@ -1,13 +1,14 @@
 #!/bin/bash
+set -e
 
 mkdir -p /tmp/redis
 
 redis-server --daemonize yes --dir /tmp/redis
 
-cd backend && rq worker &
+(cd backend && rq worker) &
 
-cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+(cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000) &
 
-npm --prefix frontend run start &
+(cd frontend && npm run start) &
 
 wait

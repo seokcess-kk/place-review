@@ -3,8 +3,7 @@ pydantic-settings
 uvicorn
 pytest
 httpx
-selenium
-webdriver-manager
+playwright
 beautifulsoup4
 openai
 rq
